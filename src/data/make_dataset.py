@@ -3,11 +3,14 @@ Script to download the data and create dataset.
 """
 
 import os
+import pickle
+
 import requests
 import argparse
 
 import pandas as pd
 from torch.utils.data import Dataset
+from tqdm import tqdm
 
 from transforms import apply_transforms
 
@@ -16,6 +19,8 @@ DATA_URL = 'https://github.com/skoltech-nlp/detox/releases/download/emnlp2021/fi
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--data_dir', default='data/raw/filtered_paramnt', help='Directory to download data to.',
                        type=str)
+argparser.add_argument('--text_dataset_path', default='data/interim/text_dataset.pkl',
+                       help='Path to save processed dataset.', type=str)
 argparser.add_argument('--filename', default='filtered_paranmt.zip', help='Filename of the downloaded data.', type=str)
 argparser.add_argument('--unzip_dir', default='data/raw/filtered_paramnt', help='Directory to unzip data to.', type=str)
 argparser.add_argument('--unzip', default=False, help='Whether to unzip the downloaded data.',
@@ -39,7 +44,7 @@ class TextDataset(Dataset):
     def _prepare_data(self):
         toxic_X, noraml_X = [], []
         toxic_y, normal_y = [], []
-        for _, row in self.raw_data.iterrows():
+        for _, row in tqdm(self.raw_data.iterrows()):
             if row['ref_tox'] > row['trn_tox']:
                 toxic_X.append(row['reference'])
                 noraml_X.append(row['translation'])
@@ -77,6 +82,7 @@ def download_data():
     args = argparser.parse_args()
 
     data_dir = args.data_dir
+    text_dataset_path = args.text_dataset_path
     filename = args.filename
     unzip_dir = args.unzip_dir
     unzip = args.unzip
@@ -84,7 +90,7 @@ def download_data():
 
     if os.path.exists(os.path.join(data_dir, filename)):
         print(f'Data already exists in {data_dir}.')
-        return os.path.join(data_dir, filename)
+        return os.path.join(data_dir, filename), text_dataset_path
 
     print('Downloading data...')
 
@@ -108,18 +114,36 @@ def download_data():
         print('Done.')
 
     print('All done.')
-    return os.path.join(data_dir, filename)
+    return os.path.join(data_dir, filename), text_dataset_path
+
+
+def save_dataset(dataset, path):
+    if os.path.exists(path):
+        dataset_from_disk = pickle.load(open(path, 'rb'))
+        if dataset_from_disk == dataset:
+            print(f'Dataset already exists in {path} and is up-to-date.')
+            return
+
+    if not os.path.exists(os.path.dirname(path)):
+        os.makedirs(os.path.dirname(path))
+
+    print(f'Pickling the dataset to {path}...')
+    pickle.dump(dataset, open(path, 'wb'))
+    print('Done.')
 
 
 def main():
     print('-' * 30 + " Downloading data " + '-' * 30)
-    result_filename = download_data()
+    result_filename, text_dataset_path = download_data()
 
     print('-' * 30 + " Creating dataset " + '-' * 30)
     dataset = create_dataset(result_filename)
 
     print('-' * 30 + " Applying transforms " + '-' * 30)
     apply_transforms(dataset)
+
+    print('-' * 30 + " Saving dataset " + '-' * 30)
+    save_dataset(dataset, text_dataset_path)
 
 
 if __name__ == '__main__':
