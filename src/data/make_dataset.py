@@ -27,11 +27,17 @@ argparser.add_argument('--remove_zip', default=False, help='Whether to remove th
 
 
 class TextDataset(Dataset):
-    def __init__(self, data_path):
-        self.data_path = data_path
+    def __init__(self, df=None, data_path=None):
+        if df is None and data_path is None:
+            raise ValueError('Either df or data_path should be provided.')
 
-        self.raw_data = self._read_data()
-        self.data = self._prepare_data()
+        if df is not None:
+            self.data = df
+        else:
+            self.data_path = data_path
+
+            self.raw_data = self._read_data()
+            self.data = self._prepare_data()
 
     def _read_data(self):
         df = pd.read_csv(self.data_path, sep='\t', index_col=0)
@@ -48,15 +54,24 @@ class TextDataset(Dataset):
         return data
 
     def __len__(self):
-        return len(self.raw_data)
+        return len(self.data)
 
     def __getitem__(self, idx):
         return self.data.iloc[idx]
 
+    def split(self, train_size, val_size, test_size):
+        assert train_size + val_size + test_size == 1
+
+        train_data = self.data.sample(frac=train_size)
+        val_data = self.data.drop(train_data.index).sample(frac=val_size / (1 - train_size))
+        test_data = self.data.drop(train_data.index).drop(val_data.index)
+
+        return TextDataset(train_data), TextDataset(val_data), TextDataset(test_data)
+
 
 def create_dataset(data_path):
     print(f'Creating dataset from {data_path}...')
-    dataset = TextDataset(data_path)
+    dataset = TextDataset(data_path=data_path)
     print('Done.')
 
     print('Dataset size:', len(dataset))
@@ -130,7 +145,7 @@ def main():
 
     print('-' * 30 + " Applying text transforms " + '-' * 30)
     from transforms import apply_transforms
-    apply_transforms(dataset)
+    # apply_transforms(dataset)
 
     print('-' * 30 + " Saving text dataset " + '-' * 30)
     save_dataset(dataset, text_dataset_path)
