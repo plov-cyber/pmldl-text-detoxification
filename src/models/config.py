@@ -1,12 +1,13 @@
 TOKENIZER_PATH = "s-nlp/t5-paraphrase-paws-msrp-opinosis-paranmt"
 MODEL_PATH = TOKENIZER_PATH
 DIS_PATH = 's-nlp/gpt2-base-gedi-detoxification'
+CLF_PATH = 's-nlp/roberta_toxicity_classifier_v1'
+
 DEVICE = "cpu"
 DEFAULT_PROMPT = "Got damn, you didn't specify any prompt, shit!"
 
 COMMON_GEN_CONF = {
-    # 'do_sample': True,
-    'num_beams': 5,
+    'num_beams': 10,
     'repetition_penalty': 5.0,
     'temperature': 1.0
 }
