@@ -19,6 +19,7 @@ argparser.add_argument('--data_dir', default='data/raw/filtered_paramnt', help='
 argparser.add_argument('--text_dataset_path', default='data/interim/text_dataset.pkl',
                        help='Path to save processed dataset.', type=str)
 argparser.add_argument('--filename', default='filtered_paranmt.zip', help='Filename of the downloaded data.', type=str)
+argparser.add_argument('--force_download', help="Download the data even if already on disk.", action='store_true')
 argparser.add_argument('--with_transforms', help='Whether to apply the transforms.', action='store_true')
 argparser.add_argument('--unzip_dir', default='data/raw/filtered_paramnt', help='Directory to unzip data to.', type=str)
 argparser.add_argument('--unzip', help='Whether to unzip the downloaded data.',
@@ -83,21 +84,19 @@ def create_dataset(data_path):
     return dataset
 
 
-def download_data(data_dir, text_dataset_path, filename, unzip_dir, unzip, remove_zip):
-    if os.path.exists(os.path.join(data_dir, filename)):
-        print(f'Data already exists in {data_dir}.')
-        return os.path.join(data_dir, filename), text_dataset_path
+def download_data(data_dir, text_dataset_path, filename, force_download, unzip_dir, unzip, remove_zip):
+    if os.path.exists(os.path.join(data_dir, filename)) and not force_download:
+        print(f'1. Data already exists in {data_dir}.')
+        print('Done.')
+    else:
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
 
-    print('Downloading data...')
-
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-
-    print(f'1. Getting file from {DATA_URL} to {data_dir}...')
-    r = requests.get(DATA_URL)
-    with open(os.path.join(data_dir, filename), 'wb') as f:
-        f.write(r.content)
-    print('Done.')
+        print(f'1. Getting file from {DATA_URL} to {data_dir}...')
+        r = requests.get(DATA_URL)
+        with open(os.path.join(data_dir, filename), 'wb') as f:
+            f.write(r.content)
+        print('Done.')
 
     if unzip:
         print(f'2. Unzipping data from {data_dir} to {unzip_dir}...')
@@ -125,12 +124,13 @@ def save_dataset(dataset, path):
 
     print(f'Pickling the dataset to {path}...')
     pickle.dump(dataset, open(path, 'wb'))
-    print('Done.')
+    print('All done.')
 
 
 def main(args):
     data_dir = args.data_dir
     text_dataset_path = args.text_dataset_path
+    force_download = args.force_download
     with_transforms = args.with_transforms
     filename = args.filename
     unzip_dir = args.unzip_dir
@@ -138,7 +138,8 @@ def main(args):
     remove_zip = args.remove_zip
 
     print('-' * 30 + " Downloading data " + '-' * 30)
-    result_filename, text_dataset_path = download_data(data_dir, text_dataset_path, filename, unzip_dir, unzip,
+    result_filename, text_dataset_path = download_data(data_dir, text_dataset_path, filename, force_download, unzip_dir,
+                                                       unzip,
                                                        remove_zip)
 
     print('-' * 30 + " Creating dataset " + '-' * 30)

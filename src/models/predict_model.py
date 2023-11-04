@@ -12,11 +12,13 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModelForCausa
 
 transformers.logging.set_verbosity_error()
 
-from src.models.model_class import GediAdapter
-from src.config import TOKENIZER_PATH, MODEL_PATH, DIS_PATH, DEVICE, DEFAULT_PROMPT
+from model_class import GediAdapter
+from config import TOKENIZER_PATH, MODEL_PATH, DIS_PATH, DEVICE, DEFAULT_PROMPT, \
+    TOXIC_MODEL_CONF, NONTOXIC_MODEL_CONF, COMMON_GEN_CONF
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--prompt', help="Text prompt to detoxify by the model", type=str)
+argparser.add_argument('--output_num', default=1, help='Number of model ouputs', type=int)
 argparser.add_argument('--toxify', help="Make the sentence toxic instead", action='store_true')
 
 
@@ -42,26 +44,25 @@ def initialize_model(toxify):
         model=gen_model,
         gedi_model=dis_model,
         tokenizer=tokenizer,
-        gedi_logit_coef=5,
-        target=int(toxify),
         neg_code=new_neg,
         pos_code=new_pos,
-        lb=None,
-        ub=None,
+        **(TOXIC_MODEL_CONF if toxify else NONTOXIC_MODEL_CONF)
     )
 
     print("All done.")
     return gedi_adapter
 
 
-def process_prompt(model, prompt):
+def process_prompt(model, prompt, output_num):
     print("Encoding the prompt...")
 
     inputs = model.tokenizer.encode(prompt, return_tensors='pt').to(DEVICE)
 
     print("Generating the output...")
     results = model.generate(
-        inputs
+        inputs,
+        num_return_sequences=output_num,
+        **COMMON_GEN_CONF,
     )
 
     print("Decoding the results...")
@@ -84,6 +85,7 @@ def print_prompt_results(prompt, results):
 def main(args):
     prompt = args.prompt
     toxify = args.toxify
+    output_num = args.output_num
 
     print('-' * 30 + " Initializing the model " + '-' * 30)
     gedi_adapter = initialize_model(toxify)
@@ -93,7 +95,7 @@ def main(args):
         print(f"!!! You didn't specify the prompt, using default: '{DEFAULT_PROMPT}' !!!")
         prompt = DEFAULT_PROMPT
 
-    results = process_prompt(gedi_adapter, prompt)
+    results = process_prompt(gedi_adapter, prompt, output_num)
 
     print('-' * 30 + " Result " + '-' * 30)
     print_prompt_results(prompt, results)
