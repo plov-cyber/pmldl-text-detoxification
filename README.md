@@ -1,4 +1,4 @@
-# Text Detoxification using ...
+# Text Detoxification using GPT-2 based model
 
 **Lev Rekhlov, BS21-DS-02, l.rekhlov@innopolis.university**
 
