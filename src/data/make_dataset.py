@@ -19,11 +19,12 @@ argparser.add_argument('--data_dir', default='data/raw/filtered_paramnt', help='
 argparser.add_argument('--text_dataset_path', default='data/interim/text_dataset.pkl',
                        help='Path to save processed dataset.', type=str)
 argparser.add_argument('--filename', default='filtered_paranmt.zip', help='Filename of the downloaded data.', type=str)
+argparser.add_argument('--with_transforms', help='Whether to apply the transforms.', action='store_true')
 argparser.add_argument('--unzip_dir', default='data/raw/filtered_paramnt', help='Directory to unzip data to.', type=str)
-argparser.add_argument('--unzip', default=False, help='Whether to unzip the downloaded data.',
-                       action=argparse.BooleanOptionalAction)
-argparser.add_argument('--remove_zip', default=False, help='Whether to remove the downloaded zip file.',
-                       action=argparse.BooleanOptionalAction)
+argparser.add_argument('--unzip', help='Whether to unzip the downloaded data.',
+                       action='store_true')
+argparser.add_argument('--remove_zip', help='Whether to remove the downloaded zip file.',
+                       action='store_true')
 
 
 class TextDataset(Dataset):
@@ -82,16 +83,7 @@ def create_dataset(data_path):
     return dataset
 
 
-def download_data():
-    args = argparser.parse_args()
-
-    data_dir = args.data_dir
-    text_dataset_path = args.text_dataset_path
-    filename = args.filename
-    unzip_dir = args.unzip_dir
-    unzip = args.unzip
-    remove_zip = args.remove_zip
-
+def download_data(data_dir, text_dataset_path, filename, unzip_dir, unzip, remove_zip):
     if os.path.exists(os.path.join(data_dir, filename)):
         print(f'Data already exists in {data_dir}.')
         return os.path.join(data_dir, filename), text_dataset_path
@@ -136,20 +128,32 @@ def save_dataset(dataset, path):
     print('Done.')
 
 
-def main():
+def main(args):
+    data_dir = args.data_dir
+    text_dataset_path = args.text_dataset_path
+    with_transforms = args.with_transforms
+    filename = args.filename
+    unzip_dir = args.unzip_dir
+    unzip = args.unzip
+    remove_zip = args.remove_zip
+
     print('-' * 30 + " Downloading data " + '-' * 30)
-    result_filename, text_dataset_path = download_data()
+    result_filename, text_dataset_path = download_data(data_dir, text_dataset_path, filename, unzip_dir, unzip,
+                                                       remove_zip)
 
     print('-' * 30 + " Creating dataset " + '-' * 30)
     dataset = create_dataset(result_filename)
 
-    print('-' * 30 + " Applying text transforms " + '-' * 30)
-    from transforms import apply_transforms
-    # apply_transforms(dataset)
+    if with_transforms:
+        print('-' * 30 + " Applying text transforms " + '-' * 30)
+        from transforms import apply_transforms
+        apply_transforms(dataset)
 
     print('-' * 30 + " Saving text dataset " + '-' * 30)
     save_dataset(dataset, text_dataset_path)
 
 
 if __name__ == '__main__':
-    main()
+    args = argparser.parse_args()
+
+    main(args)
