@@ -9,10 +9,12 @@ warnings.filterwarnings('ignore')
 import torch
 import transformers
 from transformers import RobertaForSequenceClassification, RobertaTokenizer
+from nltk.translate.bleu_score import sentence_bleu
 
 transformers.logging.set_verbosity_error()
 
 from config import CLF_PATH, DEFAULT_PROMPT, DEVICE
+from predict_model import initialize_model as init_gen_model, process_prompt
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--prompt', help="Text prompt to compute toxicity for", type=str)
@@ -27,6 +29,30 @@ def initialize_model():
 
     print("All done.")
     return model, tokenizer
+
+
+def get_metrics(prompt, result):
+    metrics = dict()
+
+    model, tokenizer = initialize_model()
+
+    print("Computing metrics...")
+    metrics['bleu'] = sentence_bleu([prompt], result)
+    metrics['toxicity'] = compute_toxicity(model, tokenizer, [prompt])[0]
+
+    print("All done.")
+    return metrics
+
+
+def comput_blue_score(prompt):
+    model = init_gen_model(0)
+    result = process_prompt(model, prompt, 1)[0]
+
+    print('Calculating BLEU similarity...')
+    bleu_sim = sentence_bleu([prompt], result)
+
+    print("All done.")
+    return result, float(bleu_sim)
 
 
 def compute_toxicity(model, tokenizer, prompts):
@@ -54,9 +80,14 @@ def main(args):
 
     toxicity = compute_toxicity(model, tokenizer, [prompt])[0]
 
+    print('-' * 30 + " Computing BLEU score " + '-' * 30)
+    model_result, bleu_score = comput_blue_score(prompt)
+
     print('-' * 30 + " Result " + '-' * 30)
     print(f"Prompt: {prompt}")
-    print(f"Predicted toxicity: {'%.3f' % toxicity}")
+    print(f"Translation: {model_result}")
+    print(f"BLEU score:\t{'%.4f' % bleu_score}")
+    print(f"Toxicity:\t{'%.4f' % toxicity}")
 
 
 if __name__ == '__main__':

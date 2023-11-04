@@ -59,7 +59,7 @@ def process_prompt(model, prompt, output_num):
     inputs = model.tokenizer.encode(prompt, return_tensors='pt').to(DEVICE)
 
     print("Generating the output...")
-    results = model.generate(
+    results_raw = model.generate(
         inputs,
         num_return_sequences=output_num,
         **COMMON_GEN_CONF,
@@ -68,7 +68,7 @@ def process_prompt(model, prompt, output_num):
     print("Decoding the results...")
     results = [
         model.tokenizer.decode(r, skip_special_tokens=True)
-        for r in results
+        for r in results_raw
     ]
 
     print("All done.")
@@ -95,7 +95,7 @@ def main(args):
         print(f"!!! You didn't specify the prompt, using default: '{DEFAULT_PROMPT}' !!!")
         prompt = DEFAULT_PROMPT
 
-    results = process_prompt(gedi_adapter, prompt, output_num)
+    results, _ = process_prompt(gedi_adapter, prompt, output_num)
 
     print('-' * 30 + " Result " + '-' * 30)
     print_prompt_results(prompt, results)
