@@ -2,13 +2,6 @@
 Scripts to visualize data and results.
 """
 
-"""
-Plots to do:
-- How model changes toxicity
-- How model is far away from target toxicity
-- How model changes BLEU score
-"""
-
 import pickle
 import matplotlib.pyplot as plt
 
