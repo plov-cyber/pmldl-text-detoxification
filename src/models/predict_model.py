@@ -95,7 +95,7 @@ def main(args):
         print(f"!!! You didn't specify the prompt, using default: '{DEFAULT_PROMPT}' !!!")
         prompt = DEFAULT_PROMPT
 
-    results, _ = process_prompt(gedi_adapter, prompt, output_num)
+    results = process_prompt(gedi_adapter, prompt, output_num)
 
     print('-' * 30 + " Result " + '-' * 30)
     print_prompt_results(prompt, results)
