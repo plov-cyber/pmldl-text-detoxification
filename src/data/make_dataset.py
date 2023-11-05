@@ -53,6 +53,12 @@ class TextDataset(Dataset):
         data['normal'] = pd.concat([self.raw_data[self.raw_data['ref_tox'] > self.raw_data['trn_tox']]['translation'],
                                     self.raw_data[self.raw_data['ref_tox'] < self.raw_data['trn_tox']]['reference']])
         data['toxic_reduction'] = abs(self.raw_data['ref_tox'] - self.raw_data['trn_tox'])
+        data['toxic_score'] = pd.concat(
+            [self.raw_data[self.raw_data['ref_tox'] > self.raw_data['trn_tox']]['ref_tox'],
+             self.raw_data[self.raw_data['ref_tox'] < self.raw_data['trn_tox']]['trn_tox']])
+        data['normal_score'] = pd.concat(
+            [self.raw_data[self.raw_data['ref_tox'] > self.raw_data['trn_tox']]['trn_tox'],
+             self.raw_data[self.raw_data['ref_tox'] < self.raw_data['trn_tox']]['ref_tox']])
 
         return data
 
