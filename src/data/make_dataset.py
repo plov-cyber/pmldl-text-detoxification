@@ -16,6 +16,7 @@ DATA_URL = 'https://github.com/skoltech-nlp/detox/releases/download/emnlp2021/fi
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--data_dir', default='data/raw/filtered_paramnt', help='Directory to download data to.',
                        type=str)
+argparser.add_argument('--download_url', help='URL to download the data from.', type=str, default=DATA_URL)
 argparser.add_argument('--text_dataset_path', default='data/interim/text_dataset.pkl',
                        help='Path to save processed dataset.', type=str)
 argparser.add_argument('--filename', default='filtered_paranmt.zip', help='Filename of the downloaded data.', type=str)
@@ -84,7 +85,7 @@ def create_dataset(data_path):
     return dataset
 
 
-def download_data(data_dir, text_dataset_path, filename, force_download, unzip_dir, unzip, remove_zip):
+def download_data(data_dir, download_url, text_dataset_path, filename, force_download, unzip_dir, unzip, remove_zip):
     if os.path.exists(os.path.join(data_dir, filename)) and not force_download:
         print(f'1. Data already exists in {data_dir}.')
         print('Done.')
@@ -92,8 +93,8 @@ def download_data(data_dir, text_dataset_path, filename, force_download, unzip_d
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
 
-        print(f'1. Getting file from {DATA_URL} to {data_dir}...')
-        r = requests.get(DATA_URL)
+        print(f'1. Getting file from {download_url} to {data_dir}...')
+        r = requests.get(download_url)
         with open(os.path.join(data_dir, filename), 'wb') as f:
             f.write(r.content)
         print('Done.')
@@ -130,6 +131,7 @@ def save_dataset(dataset, path):
 def main(args):
     data_dir = args.data_dir
     text_dataset_path = args.text_dataset_path
+    download_url = args.download_url
     force_download = args.force_download
     with_transforms = args.with_transforms
     filename = args.filename
@@ -138,9 +140,9 @@ def main(args):
     remove_zip = args.remove_zip
 
     print('-' * 30 + " Downloading data " + '-' * 30)
-    result_filename, text_dataset_path = download_data(data_dir, text_dataset_path, filename, force_download, unzip_dir,
-                                                       unzip,
-                                                       remove_zip)
+    result_filename, text_dataset_path = download_data(data_dir, download_url,
+                                                       text_dataset_path, filename, force_download, unzip_dir,
+                                                       unzip, remove_zip)
 
     print('-' * 30 + " Creating dataset " + '-' * 30)
     dataset = create_dataset(result_filename)
